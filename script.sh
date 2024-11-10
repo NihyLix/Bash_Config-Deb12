@@ -7,77 +7,6 @@
 
 #declaration de toutes les fonctions qui seront utilisees
 
-function menu()
-{
-	DIALOG=${DIALOG=dialog}
-	fichtemp=`tempfile 2>/dev/null` || fichtemp=/tmp/test$$
-	trap "rm -f $fichtemp" 0 1 2 5 15
-	$DIALOG --backtitle "Configuration personnalisee" \
-			--title "Choix options" --clear \
-		    --checklist "Selectionner l'(es) option(s) voulue(s)" 20 61 5 \
-				"Standard" "Configuration systeme standard" off\
-		    	"Apps" "Choix des applications à installer" off 2> $fichtemp
-	valret=$?
-	choix=`cat $fichtemp`
-	case $valret in
-		0) ;;
-		1) ;;
-		255) ;;
-	esac
-#-----#
-
-	function sous_menu_standard()
-	{
-		DIALOG=${DIALOG=dialog}
-		fichtemp=`tempfile 2>/dev/null` || fichtemp=/tmp/test$$
-		trap "rm -f $fichtemp" 0 1 2 5 15
-		$DIALOG --backtitle "Configuration Standard" \
-		--title "Choix options 'Standard'" --clear \
-		--checklist "Selectionner l'(es) option(s) voulue(s)" 20 61 5 \
-			"Update" "Configure les mises a jours" off\
-			"SSH" "Configure SSH" off\
-			"Conf. user" "Configure un utilisateur standard" off\
-			"Conf. root" "Configure l'utilisateur root" off\
-			"Securite reseau" "Securise les flux reseaux" off\
-			"Securite systeme" "Securise le systeme" off 2> $fichtemp
-		valret=$?
-		choix=`cat $fichtemp`
-		case $valret in
-		0)
-			echo "'$choix'";;
-		1)
-			echo "Appuyé sur Annuler.";;
-		255)
-			echo "Appuyé sur Echap.";;
-		esac
-	}
-
-	function sous_menu_apps()
-	{
-		DIALOG=${DIALOG=dialog}
-		fichtemp=`tempfile 2>/dev/null` || fichtemp=/tmp/test$$
-		trap "rm -f $fichtemp" 0 1 2 5 15
-
-		$DIALOG --backtitle "Configuration Apps" \
-		--title "Choix options 'Apps'" --clear \
-		--checklist "Selectionner le(s) paquet(s) voulu(s)" 20 61 5 \
-			"Docker" "Installation de docker" off\
-			"Apache" "Installation de apache" off\
-			"Nginx" "Installation de nginx" off\
-			"Certbot" "Installation de certbot" off 2> $fichtemp
-		valret=$?
-		choix=`cat $fichtemp`
-		case $valret in
-		0)
-			echo "'$choix'";;
-		1)
-			echo "Appuyé sur Annuler.";;
-		255)
-			echo "Appuyé sur Echap.";;
-		esac
-	}
-}
-
 function standard() # contiens les fonctions qui viendront configurer le systeme pour la premiere utilisation
 {
 	function update() # configurer les sources list, fait une mise a jour, nettoie les fichiers residuel et configurer les mises a jours automatique
@@ -153,7 +82,7 @@ function standard() # contiens les fonctions qui viendront configurer le systeme
 
 function web() #installation du serveur souhaite
 {
-	function apache() #installation et configuration d'apache
+	function Apache() #installation et configuration d'apache
 	{
 		folder="$HOME/tempo_download"
 		v=$v #php version
@@ -203,13 +132,7 @@ function web() #installation du serveur souhaite
 		openssl req -new -x509 -key /etc/ssl/vhost/vhist.key -subj "/CN=BHO_Script" -out /etc/ssl/vhost/vhost.pem
 		mv $folder/url_fichier_conf /etc/apache2/sites-available/vhost.conf
 		apachectl configtest >> /var/log/apache2/log_script
-		apachectl restart
-
-		#---CERTBOT PREP---#
-		apt install snapd  
-		snap install core; sudo snap refresh core  
-		snap install --classic certbot  
-		ln -s /snap/bin/certbot /usr/bin/certbot  
+		apachectl restart  
 
 		#---SECU CONF SRV---#
 		wget url_fichier_conf
@@ -223,9 +146,19 @@ function web() #installation du serveur souhaite
 	}
 
 
-	function nginx() #installation et configuration de nginx
+	function Nginx() #installation et configuration de nginx
 	{
 
+	}
+
+	function Cerbot()
+	{
+
+		#---CERTBOT PREP---#
+		apt install snapd  
+		snap install core; sudo snap refresh core  
+		snap install --classic certbot  
+		ln -s /snap/bin/certbot /usr/bin/certbot
 	}
 
 	echo "Apache (1), nginx (2) ?"
@@ -276,9 +209,90 @@ function docker() #installation de docker
 	sudo docker run hello-world
 }
 
+
+
+function menu()
+{
+	function Standard()
+	{
+		DIALOG=${DIALOG=dialog}
+		fichtemp=`tempfile 2>/dev/null` || fichtemp=/tmp/test$$
+		trap "rm -f $fichtemp" 0 1 2 5 15
+		$DIALOG --backtitle "Configuration Standard" \
+		--title "Choix options 'Standard'" --clear \
+		--checklist "Selectionner l'(es) option(s) voulue(s)" 20 61 5 \
+			"Update" "Configure les mises a jours" off\
+			"SSH" "Configure SSH" off\
+			"Conf. user" "Configure un utilisateur standard" off\
+			"Conf. root" "Configure l'utilisateur root" off\
+			"Securite reseau" "Securise les flux reseaux" off\
+			"Securite systeme" "Securise le systeme" off 2> $fichtemp
+		valret=$?
+		choixstd=`cat $fichtemp`
+		case $valret in
+		0) for select in $choixstd
+			do
+				$choixstd
+			done;;
+		1) ;;
+		255) ;;
+	esac
+		esac
+	}
+
+	function Apps()
+	{
+		web #appel de la fonction contenant les sous fonctions
+		DIALOG=${DIALOG=dialog}
+		fichtemp=`tempfile 2>/dev/null` || fichtemp=/tmp/test$$
+		trap "rm -f $fichtemp" 0 1 2 5 15
+
+		$DIALOG --backtitle "Configuration Apps" \
+		--title "Choix options 'Apps'" --clear \
+		--checklist "Selectionner le(s) paquet(s) voulu(s)" 20 61 5 \
+			"Docker" "Installation de docker" off\
+			"Apache" "Installation de apache" off\
+			"Nginx" "Installation de nginx" off\
+			"Certbot" "Installation de certbot" off 2> $fichtemp
+		valret=$?
+		choixapps=`cat $fichtemp`
+		case $valret in
+		0) for select in $choixapps
+			do
+				$choixapps
+			done;;
+		1) ;;
+		255) ;;
+	esac
+		esac
+	}
+
+
+	DIALOG=${DIALOG=dialog}
+	fichtemp=`tempfile 2>/dev/null` || fichtemp=/tmp/test$$
+	trap "rm -f $fichtemp" 0 1 2 5 15
+	$DIALOG --backtitle "Configuration personnalisee" \
+			--title "Choix options" --clear \
+		    --checklist "Selectionner l'(es) option(s) voulue(s)" 20 61 5 \
+				"Standard" "Configuration systeme standard" off\
+		    	"Apps" "Choix des applications à installer" off 2> $fichtemp
+	valret=$?
+	choix=`cat $fichtemp`
+	case $valret in
+		0) for select in $choix
+			do
+				$choix
+			done;;
+		1) ;;
+		255) ;;
+	esac
+}
+
 ###############################
 ###----- PROD ___ AREA -----###
 ###############################
+
+apt update && apt upgrade -y &&apt install dialog -y #sinon pas de graphique !
 
 i=0
 while [ $i -ne 1 ]

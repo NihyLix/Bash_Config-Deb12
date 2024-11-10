@@ -7,6 +7,77 @@
 
 #declaration de toutes les fonctions qui seront utilisees
 
+function menu()
+{
+	DIALOG=${DIALOG=dialog}
+	fichtemp=`tempfile 2>/dev/null` || fichtemp=/tmp/test$$
+	trap "rm -f $fichtemp" 0 1 2 5 15
+	$DIALOG --backtitle "Configuration personnalisee" \
+			--title "Choix options" --clear \
+		    --checklist "Selectionner l'(es) option(s) voulue(s)" 20 61 5 \
+				"Standard" "Configuration systeme standard" off\
+		    	"Apps" "Choix des applications à installer" off 2> $fichtemp
+	valret=$?
+	choix=`cat $fichtemp`
+	case $valret in
+		0) ;;
+		1) ;;
+		255) ;;
+	esac
+#-----#
+
+	function sous_menu_standard()
+	{
+		DIALOG=${DIALOG=dialog}
+		fichtemp=`tempfile 2>/dev/null` || fichtemp=/tmp/test$$
+		trap "rm -f $fichtemp" 0 1 2 5 15
+		$DIALOG --backtitle "Configuration Standard" \
+		--title "Choix options 'Standard'" --clear \
+		--checklist "Selectionner l'(es) option(s) voulue(s)" 20 61 5 \
+			"Update" "Configure les mises a jours" off\
+			"SSH" "Configure SSH" off\
+			"Conf. user" "Configure un utilisateur standard" off\
+			"Conf. root" "Configure l'utilisateur root" off\
+			"Securite reseau" "Securise les flux reseaux" off\
+			"Securite systeme" "Securise le systeme" off 2> $fichtemp
+		valret=$?
+		choix=`cat $fichtemp`
+		case $valret in
+		0)
+			echo "'$choix'";;
+		1)
+			echo "Appuyé sur Annuler.";;
+		255)
+			echo "Appuyé sur Echap.";;
+		esac
+	}
+
+	function sous_menu_apps()
+	{
+		DIALOG=${DIALOG=dialog}
+		fichtemp=`tempfile 2>/dev/null` || fichtemp=/tmp/test$$
+		trap "rm -f $fichtemp" 0 1 2 5 15
+
+		$DIALOG --backtitle "Configuration Apps" \
+		--title "Choix options 'Apps'" --clear \
+		--checklist "Selectionner le(s) paquet(s) voulu(s)" 20 61 5 \
+			"Docker" "Installation de docker" off\
+			"Apache" "Installation de apache" off\
+			"Nginx" "Installation de nginx" off\
+			"Certbot" "Installation de certbot" off 2> $fichtemp
+		valret=$?
+		choix=`cat $fichtemp`
+		case $valret in
+		0)
+			echo "'$choix'";;
+		1)
+			echo "Appuyé sur Annuler.";;
+		255)
+			echo "Appuyé sur Echap.";;
+		esac
+	}
+}
+
 function standard() # contiens les fonctions qui viendront configurer le systeme pour la premiere utilisation
 {
 	function update() # configurer les sources list, fait une mise a jour, nettoie les fichiers residuel et configurer les mises a jours automatique
@@ -210,56 +281,11 @@ function docker() #installation de docker
 ###############################
 
 i=0
-while [ $i -eq 1 ]
+while [ $i -ne 1 ]
 	do
 		((i++))
-		DIALOG=${DIALOG=dialog}
-		fichtemp=`tempfile 2>/dev/null` || fichtemp=/tmp/test$$
-		trap "rm -f $fichtemp" 0 1 2 5 15
-
-		$DIALOG --backtitle "Configuration personnalisee" \
-			--title "Choix options" --clear \
-		    --checklist "Selectionner l'(es) option(s) voulue(s)" 20 61 5 \
-				"Standard" "Configuration systeme standard" off\
-		    	"Apps" "Choix des applications à installer" off 2> $fichtemp
-		valret=$?
-		choix=`cat $fichtemp`
-		case $valret in
-		  0)
-		   echo "'$choix'";;
-		  1)
-		   echo "Appuyé sur Annuler.";;
-		  255)
-		   echo "Appuyé sur Echap.";;
-		esac
-
+		menu
 		#-----#
-		if [ $choix -e "Standard" ]
-		then
-			DIALOG=${DIALOG=dialog}
-			fichtemp=`tempfile 2>/dev/null` || fichtemp=/tmp/test$$
-			trap "rm -f $fichtemp" 0 1 2 5 15
-
-			$DIALOG --backtitle "Configuration Standard" \
-			--title "Choix options 'Standard'" --clear \
-			--radiolist "Selectionner l'(es) option(s) voulue(s)" 20 61 5 \
-				"Update" "Configure les mises a jours" off\
-				"SSH" "Configure SSH" off\
-				"Conf. user" "Configure un utilisateur standard" off\
-				"Conf. root" "Configure l'utilisateur root" off\
-				"Securite reseau" "Securise les flux reseaux" off\
-				"Securite systeme" "Securise le systeme" off 2> $fichtemp
-			valret=$?
-			choix=`cat $fichtemp`
-			case $valret in
-			0)
-				echo "'$choix'";;
-			1)
-				echo "Appuyé sur Annuler.";;
-			255)
-				echo "Appuyé sur Echap.";;
-			esac
-		fi
-
-
+		
 	done
+clear

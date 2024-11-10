@@ -1,13 +1,15 @@
 #!/bin/sh
 
-echo "Indiquer ce que vous souhaitez installer (separer par des virgules)"
-read menu
 
-#la fonction de selection est en cours de developpement
+###############################
+###----- FUNCTION AREA -----###
+###############################
 
-function standard()
+#declaration de toutes les fonctions qui seront utilisees
+
+function standard() # contiens les fonctions qui viendront configurer le systeme pour la premiere utilisation
 {
-	function update()
+	function update() # configurer les sources list, fait une mise a jour, nettoie les fichiers residuel et configurer les mises a jours automatique
 	{
 		path="/etc/apt"
 		sourcelist="
@@ -45,24 +47,24 @@ function standard()
 
 	}
 
-	function default_package()
+	function default_package() #install des paquets "standards" minimal et les configures
 	{
 		apt install sudo ssh -y
 	}
 
-	function account_user()
+	function account_user() #configurer un compte et un environnement securise pour l'utilisateur standard
 	{
 		#limiter l'environnement utilisateur
 	}
 
-	function account_root()
+	function account_root() #configure le compte root et creer un second superutilisateur 
 	{
 		#---bashrc---#
 		echo PATH=/usr/sbin:$PATH >> /root/.bashrc
 
 	}
 
-	function secu_net()
+	function secu_net() #configure iptable via ufw et n'autorise que ssh
 	{
 		#iptable ssh (random port+clef rsa)
 		apt install ufw -y
@@ -70,7 +72,7 @@ function standard()
 		ufw enable
 	}
 
-	function secu_sys()
+	function secu_sys() #configuration additionnelle pour securiser le systeme
 	{
 		#jsaispaquoimettre
 	}
@@ -78,9 +80,9 @@ function standard()
 	echo "pas encore developpé"
 }
 
-function web()
+function web() #installation du serveur souhaite
 {
-	function apache()
+	function apache() #installation et configuration d'apache
 	{
 		folder="$HOME/tempo_download"
 		v=$v #php version
@@ -114,7 +116,7 @@ function web()
 		#---installation source php---#
 		apt -y install lsb-release apt-transport-https ca-certificates  
 		wget -O /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg  
-		echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/php8.list  
+		echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/php$v.list  
 		apt update && apt upgrade -y
 
 		#installation module classique php
@@ -150,7 +152,7 @@ function web()
 	}
 
 
-	function nginx()
+	function nginx() #installation et configuration de nginx
 	{
 
 	}
@@ -176,7 +178,7 @@ function web()
 	fi
 }
 
-function docker()
+function docker() #installation de docker
 {
 	for pkg in docker.io docker-doc docker-compose podman-docker containerd runc; 	
 		do sudo apt remove $pkg -y;
@@ -202,3 +204,62 @@ function docker()
 	#test bon fonctionnement
 	sudo docker run hello-world
 }
+
+###############################
+###----- PROD ___ AREA -----###
+###############################
+
+i=0
+while [ $i -eq 1 ]
+	do
+		((i++))
+		DIALOG=${DIALOG=dialog}
+		fichtemp=`tempfile 2>/dev/null` || fichtemp=/tmp/test$$
+		trap "rm -f $fichtemp" 0 1 2 5 15
+
+		$DIALOG --backtitle "Configuration personnalisee" \
+			--title "Choix options" --clear \
+		    --checklist "Selectionner l'(es) option(s) voulue(s)" 20 61 5 \
+				"Standard" "Configuration systeme standard" off\
+		    	"Apps" "Choix des applications à installer" off 2> $fichtemp
+		valret=$?
+		choix=`cat $fichtemp`
+		case $valret in
+		  0)
+		   echo "'$choix'";;
+		  1)
+		   echo "Appuyé sur Annuler.";;
+		  255)
+		   echo "Appuyé sur Echap.";;
+		esac
+
+		#-----#
+		if [ $choix -e "Standard" ]
+		then
+			DIALOG=${DIALOG=dialog}
+			fichtemp=`tempfile 2>/dev/null` || fichtemp=/tmp/test$$
+			trap "rm -f $fichtemp" 0 1 2 5 15
+
+			$DIALOG --backtitle "Configuration Standard" \
+			--title "Choix options 'Standard'" --clear \
+			--radiolist "Selectionner l'(es) option(s) voulue(s)" 20 61 5 \
+				"Update" "Configure les mises a jours" off\
+				"SSH" "Configure SSH" off\
+				"Conf. user" "Configure un utilisateur standard" off\
+				"Conf. root" "Configure l'utilisateur root" off\
+				"Securite reseau" "Securise les flux reseaux" off\
+				"Securite systeme" "Securise le systeme" off 2> $fichtemp
+			valret=$?
+			choix=`cat $fichtemp`
+			case $valret in
+			0)
+				echo "'$choix'";;
+			1)
+				echo "Appuyé sur Annuler.";;
+			255)
+				echo "Appuyé sur Echap.";;
+			esac
+		fi
+
+
+	done

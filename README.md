@@ -80,7 +80,7 @@ Le script utilise la commande `dialog` pour afficher un **menu interactif en mod
 Chaque catégorie propose un sous-menu avec des options activables individuellement.
 
 >[!WARNING]
->Fonctionnalité comportant des bugs d'éxecution.
+>Fonctionnalité comportant des bugs d'éxecution dû à des erreurs de syntaxes.
 
 
 
